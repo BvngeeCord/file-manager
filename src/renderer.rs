@@ -1,19 +1,31 @@
-// use rand::{thread_rng, Rng};
-// use rand::distributions::Alphanumeric;
-
-use std::{
-    io::{Stdout, Write},
-    path::Path,
-};
+use std::io::{Stdout, Write};
 
 use crossterm::{
     cursor::MoveTo,
     queue,
     style::{Color, ContentStyle, Print, PrintStyledContent, StyledContent, Stylize},
-    Result,
+    Result, terminal::{enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, ClearType, Clear},
 };
 
-use crate::filesystem;
+pub fn init(w: &mut Stdout) -> Result<()> {
+    queue!(w, EnterAlternateScreen)?;
+    enable_raw_mode()?;
+    w.flush()?;
+
+    Ok(())
+}
+
+pub fn close(w: &mut Stdout) -> Result<()> {
+    queue!(w, LeaveAlternateScreen)?;
+    disable_raw_mode()?;
+    w.flush()?;
+
+    Ok(())
+}
+
+pub fn clear(w: &mut Stdout) -> Result<()> {
+    queue!(w, Clear(ClearType::All))
+}
 
 pub fn render_border(w: &mut Stdout, cols: u16, rows: u16) -> Result<()> {
     let horizontal_top_line: String = format!("X{}X", "a".repeat((cols - 2) as usize));
@@ -41,12 +53,9 @@ pub fn render_border(w: &mut Stdout, cols: u16, rows: u16) -> Result<()> {
     Ok(())
 }
 
-pub fn render_content(w: &mut Stdout, _cols: u16, rows: u16, selection: u16) -> Result<()> {
-    let mut names = filesystem::filenames_in_path(Path::new("./"));
-    names.sort_by(|a, b| b.cmp(a));
-
+pub fn render_content(w: &mut Stdout, _cols: u16, rows: u16, selection: u16, content: &[String]) -> Result<()> {
     for i in 1..(rows - 1) {
-        let mut line = names.pop().unwrap_or_default();
+        let mut line: String = content.get((i-1) as usize).unwrap_or(&"".to_string()).clone();
         let width = 7;
         line = format!("{line:width$}");
 

@@ -3,19 +3,15 @@ mod renderer;
 mod filesystem;
 mod screen;
 
-use std::{io::{stdout, Write}, time::Duration};
+use std::{io::Write, time::Duration};
 
-use crossterm::{queue, terminal::{EnterAlternateScreen, enable_raw_mode, LeaveAlternateScreen, disable_raw_mode, size}, Result, event::{read, Event, poll, KeyCode, KeyEvent}};
+use crossterm::{Result, event::{read, Event, poll, KeyCode, KeyEvent}};
+use screen::Screen;
 
 fn main() -> Result<()> {
-    let mut w = stdout();
-    queue!(w, EnterAlternateScreen)?;
-    enable_raw_mode()?;
-    w.flush()?;
+    let mut screen = Screen::new();
+    screen.init()?;
 
-    let (initial_cols, initial_rows) = size()?;
-    renderer::render_border(&mut w, initial_cols, initial_rows)?;
-    
     loop {
 
         if let Some(Ok(event)) = poll_event() {
@@ -24,16 +20,14 @@ fn main() -> Result<()> {
                 break;
             }
 
-            event_handler::process_input(&mut w, event)?;
+            event_handler::process_input(&mut screen, event)?;
         }
 
-        w.flush()?;
+        screen.w.flush()?;
 
     }
 
-    disable_raw_mode()?;
-    queue!(w, LeaveAlternateScreen)?;
-    w.flush()?;
+    screen.close()?;
 
     Ok(())
 }

@@ -1,27 +1,25 @@
-use std::io::Stdout;
+use crossterm::{event::{Event, KeyCode, KeyEvent}, Result};
 
-use crossterm::{event::{Event, KeyCode, KeyEvent}, queue, terminal::{size, ClearType, Clear}, Result};
+use crate::screen::Screen;
 
-use crate::renderer;
-
-pub fn process_input(w: &mut Stdout, event: Event) -> Result<()> {
+pub fn process_input(screen: &mut Screen, event: Event) -> Result<()> {
     match event {
         Event::Resize(cols, rows) => {
-            queue!(w, Clear(ClearType::All))?;
-            renderer::render_border(w, cols, rows)?;
-            renderer::render_content(w, cols, rows, 3)?;
+            screen.resize(cols, rows);
         },
-        Event::Key(KeyEvent {code: KeyCode::Char(_c), ..}) => {
-            let (cols, rows) = size()?;
-            renderer::render_content(w, cols, rows, 3)?;
+        Event::Key(KeyEvent {code: KeyCode::Char('j'), ..}) => {
+            screen.move_selection(1);
         },
-        Event::Key(KeyEvent {code: KeyCode::Esc, ..}) => {
-            let (cols, rows) = size()?;
-            renderer::render_content(w, cols, rows, 3)?;
+        Event::Key(KeyEvent {code: KeyCode::Char('k'), ..}) => {
+            screen.move_selection(-1);
+        },
+        Event::Key(KeyEvent {code: KeyCode::Char('q'), ..})
+            | Event::Key(KeyEvent {code: KeyCode::Esc, ..}) => {
+            // screen.close()?; 
+            //this is called from main and the events are read there - how to do this?
         }
         _ => {
-            let (cols, rows) = size()?;
-            renderer::render_content(w, cols, rows, 3)?;
+
         }
     }
 
